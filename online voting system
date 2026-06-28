@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CivicVote — Secure Online Voting</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #0D1B2A;
+      --blue:   #2563EB;
+      --blue-lt:#3B82F6;
+      --slate:  #64748B;
+      --green:  #10B981;
+      --white:  #FFFFFF;
+      --surface:#F8FAFC;
+      --border: #E2E8F0;
+      --ink:    #1E293B;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--surface);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--navy);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--white);
+      font-family: 'Fraunces', serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .logo-mark {
+      width: 32px; height: 32px;
+      background: var(--blue);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-mark svg { width: 18px; height: 18px; fill: white; }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .badge-secure {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.75rem; font-weight: 500;
+      color: var(--green);
+      border: 1px solid rgba(16,185,129,0.3);
+      padding: 4px 10px; border-radius: 100px;
+    }
+    .badge-secure::before {
+      content: '';
+      width: 7px; height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .voter-info {
+      font-size: 0.82rem; color: rgba(255,255,255,0.55); font-weight: 400;
+    }
+    .voter-info strong { color: rgba(255,255,255,0.85); font-weight: 500; }
+
+    /* ── HERO BANNER ── */
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a2e4a 100%);
+      color: white;
+      padding: 3rem 2rem 3.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      right: -80px; top: -80px;
+      width: 380px; height: 380px;
+      border-radius: 50%;
+      border: 1px solid rgba(37,99,235,0.2);
+      pointer-events: none;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      right: 40px; top: 40px;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      border: 1px solid rgba(37,99,235,0.15);
+      pointer-events: none;
+    }
+    .hero-inner { max-width: 720px; position: relative; }
+    .hero-eyebrow {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--blue-lt); margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+    }
+    .hero h1 em { font-style: italic; color: rgba(255,255,255,0.6); }
+    .hero-sub {
+      font-size: 0.95rem; color: rgba(255,255,255,0.55);
+      font-weight: 400; max-width: 500px;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .deadline-row {
+      display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;
+    }
+    .deadline-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 0.82rem;
+    }
+    .deadline-chip .label { color: rgba(255,255,255,0.4); }
+    .deadline-chip .val   { color: white; font-weight: 600; }
+    .countdown {
+      display: flex; gap: 12px;
+    }
+    .cd-unit {
+      text-align: center;
+    }
+    .cd-num {
+      font-family: 'Fraunces', serif;
+      font-size: 1.6rem; font-weight: 700;
+      color: white; line-height: 1;
+    }
+    .cd-lbl {
+      font-size: 0.62rem; text-transform: uppercase;
+      letter-spacing: 0.08em; color: rgba(255,255,255,0.35);
+      margin-top: 2px;
+    }
+
+    /* ── PROGRESS OVERVIEW ── */
+    .progress-bar-section {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+    }
+    .pb-header {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 10px;
+    }
+    .pb-label { font-size: 0.8rem; font-weight: 600; color: var(--slate); text-transform: uppercase; letter-spacing: 0.08em; }
+    .pb-count { font-size: 0.85rem; color: var(--slate); }
+    .pb-count strong { color: var(--ink); font-weight: 600; }
+    .progress-track {
+      height: 8px;
+      background: var(--border);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 100px;
+      background: linear-gradient(90deg, var(--blue), var(--blue-lt));
+      width: 0%;
+      transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ── MAIN LAYOUT ── */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    /* ── SECTION HEADING ── */
+    .section-heading {
+      display: flex; align-items: baseline; gap: 12px; margin-bottom: 1.5rem;
+    }
+    .section-heading h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em;
+    }
+    .section-heading .sub { font-size: 0.82rem; color: var(--slate); font-weight: 400; }
+
+    /* ── CANDIDATE CARDS ── */
+    .candidates-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 2rem;
+    }
+    .candidate-card {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      cursor: pointer;
+      transition: border-color 0.18s, box-shadow 0.18s, transform 0.12s;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      user-select: none;
+    }
+    .candidate-card:hover {
+      border-color: var(--blue-lt);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+      transform: translateY(-1px);
+    }
+    .candidate-card:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 3px;
+    }
+    .candidate-card.selected {
+      border-color: var(--blue);
+      background: #EFF6FF;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+    .candidate-card.voted-winner {
+      border-color: var(--green);
+      background: #ECFDF5;
+    }
+    .candidate-card.voted-other {
+      opacity: 0.62;
+    }
+
+    /* ballot paper fold accent */
+    .candidate-card::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 0; height: 0;
+      border-style: solid;
+      border-width: 0 18px 18px 0;
+      border-color: transparent var(--border) transparent transparent;
+      border-top-right-radius: 10px;
+      transition: border-color 0.18s;
+    }
+    .candidate-card.selected::before { border-right-color: #BFDBFE; }
+    .candidate-card.voted-winner::before { border-right-color: #A7F3D0; }
+
+    .candidate-avatar {
+      width: 52px; height: 52px; border-radius: 50%;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', serif;
+      font-size: 1.25rem; font-weight: 700;
+      color: white;
+    }
+    .candidate-body { flex: 1; min-width: 0; }
+    .candidate-name {
+      font-weight: 600; font-size: 1rem;
+      color: var(--ink); margin-bottom: 2px;
+    }
+    .candidate-party {
+      font-size: 0.78rem; color: var(--slate); font-weight: 400;
+    }
+    .candidate-platform {
+      font-size: 0.8rem; color: var(--slate);
+      margin-top: 6px; line-height: 1.5;
+    }
+    .candidate-right {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+      flex-shrink: 0;
+    }
+    .radio-ring {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.18s, background 0.18s;
+      flex-shrink: 0;
+    }
+    .candidate-card.selected .radio-ring {
+      border-color: var(--blue);
+      background: var(--blue);
+    }
+    .radio-ring::after {
+      content: '';
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: white;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .candidate-card.selected .radio-ring::after { opacity: 1; }
+
+    /* results bar inside card */
+    .result-bar-wrap { width: 120px; }
+    .result-pct {
+      font-size: 0.75rem; font-weight: 600;
+      color: var(--slate); text-align: right;
+      margin-bottom: 4px;
+    }
+    .result-bar-track {
+      height: 5px; background: var(--border); border-radius: 100px; overflow: hidden;
+    }
+    .result-bar-fill {
+      height: 100%; border-radius: 100px;
+      background: var(--blue);
+      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .candidate-card.voted-winner .result-bar-fill { background: var(--green); }
+    .check-icon {
+      display: none;
+      width: 22px; height: 22px;
+      background: var(--green);
+      border-radius: 50%;
+      align-items: center; justify-content: center;
+    }
+    .candidate-card.voted-winner .check-icon { display: flex; }
+    .candidate-card.voted-winner .radio-ring { display: none; }
+    .check-icon svg { width: 13px; height: 13px; stroke: white; }
+
+    /* ── VOTE BUTTON ── */
+    .vote-action {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .vote-hint {
+      font-size: 0.82rem; color: var(--slate); line-height: 1.5;
+    }
+    .vote-hint strong { color: var(--ink); font-weight: 500; display: block; margin-bottom: 2px; }
+    .btn-vote {
+      background: var(--blue);
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem; font-weight: 600;
+      border: none; border-radius: 8px;
+      padding: 12px 28px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, opacity 0.15s;
+      display: flex; align-items: center; gap: 8px;
+      white-space: nowrap;
+    }
+    .btn-vote:hover:not(:disabled) { background: #1D4ED8; transform: translateY(-1px); }
+    .btn-vote:active:not(:disabled) { transform: translateY(0); }
+    .btn-vote:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-vote svg { width: 16px; height: 16px; fill: white; }
+
+    /* ── SUCCESS STATE ── */
+    .success-banner {
+      display: none;
+      background: #ECFDF5;
+      border: 1.5px solid #6EE7B7;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      align-items: center; gap: 1rem; flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+    .success-banner.visible { display: flex; }
+    .success-icon {
+      width: 40px; height: 40px;
+      background: var(--green);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .success-icon svg { width: 20px; height: 20px; stroke: white; }
+    .success-text strong { display: block; font-weight: 600; color: #065F46; margin-bottom: 2px; }
+    .success-text span { font-size: 0.82rem; color: #047857; }
+    .receipt-code {
+      margin-left: auto;
+      font-family: 'DM Sans', monospace;
+      font-size: 0.75rem; font-weight: 600;
+      color: #047857;
+      background: rgba(16,185,129,0.1);
+      padding: 6px 12px; border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── OTHER QUESTIONS ── */
+    .other-q-section { margin-top: 3rem; }
+    .divider {
+      border: none; border-top: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+    .poll-card {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 12px;
+    }
+    .poll-q { font-weight: 600; font-size: 0.95rem; margin-bottom: 1rem; }
+    .poll-options { display: flex; flex-direction: column; gap: 8px; }
+    .poll-option {
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer;
+      padding: 8px 12px; border-radius: 8px;
+      border: 1.5px solid var(--border);
+      transition: border-color 0.15s, background 0.15s;
+      font-size: 0.875rem;
+    }
+    .poll-option:hover { border-color: var(--blue-lt); background: #EFF6FF; }
+    .poll-option.selected { border-color: var(--blue); background: #EFF6FF; }
+    .poll-opt-radio {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid var(--border); flex-shrink: 0;
+      transition: border-color 0.15s, background 0.15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .poll-option.selected .poll-opt-radio {
+      border-color: var(--blue); background: var(--blue);
+    }
+    .poll-opt-radio::after {
+      content: '';
+      width: 6px; height: 6px; border-radius: 50%;
+      background: white; opacity: 0;
+      transition: opacity 0.12s;
+    }
+    .poll-option.selected .poll-opt-radio::after { opacity: 1; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--navy);
+      padding: 1.5rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem;
+    }
+    .footer-left { font-size: 0.78rem; color: rgba(255,255,255,0.35); }
+    .footer-links {
+      display: flex; gap: 1.5rem;
+    }
+    .footer-links a {
+      font-size: 0.78rem; color: rgba(255,255,255,0.35);
+      text-decoration: none; transition: color 0.15s;
+    }
+    .footer-links a:hover { color: rgba(255,255,255,0.7); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      header { padding: 0 1rem; }
+      .hero { padding: 2rem 1rem 2.5rem; }
+      .progress-bar-section { padding: 1rem; }
+      main { padding: 2rem 1rem 4rem; }
+      .deadline-row { gap: 1rem; }
+      .candidate-card { gap: 1rem; padding: 1rem; }
+      .candidate-platform { display: none; }
+      .result-bar-wrap { width: 80px; }
+      .vote-action { flex-direction: column; align-items: flex-start; }
+      .footer { flex-direction: column; }
+      .voter-info { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 12l2 2 4-4M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
+      </svg>
+    </div>
+    CivicVote
+  </div>
+  <div class="header-right">
+    <div class="badge-secure">Secure Session</div>
+    <div class="voter-info">Voter: <strong>A. Richardson</strong> · ID #VR-20481</div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <p class="hero-eyebrow">City of Maplewood · General Election 2026</p>
+    <h1>Your vote shapes<br/><em>what comes next.</em></h1>
+    <p class="hero-sub">Cast your official ballot securely. Each vote is encrypted end-to-end and verified by an independent audit trail.</p>
+    <div class="deadline-row">
+      <div class="deadline-chip">
+        <span class="label">Polls close</span>
+        <span class="val">Jun 28 · 8:00 PM</span>
+      </div>
+      <div class="countdown">
+        <div class="cd-unit"><div class="cd-num" id="cd-h">04</div><div class="cd-lbl">hrs</div></div>
+        <div class="cd-unit"><div class="cd-num" id="cd-m">32</div><div class="cd-lbl">min</div></div>
+        <div class="cd-unit"><div class="cd-num" id="cd-s">17</div><div class="cd-lbl">sec</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROGRESS BAR -->
+<div class="progress-bar-section">
+  <div class="pb-header">
+    <span class="pb-label">Voter Turnout</span>
+    <span class="pb-count"><strong id="turnout-num">12,847</strong> of 28,400 registered voters</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="turnout-bar"></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main>
+  <div class="section-heading">
+    <h2>Mayor of Maplewood</h2>
+    <span class="sub">Select one candidate</span>
+  </div>
+
+  <div class="candidates-grid" id="candidates-grid">
+
+    <div class="candidate-card" tabindex="0" data-id="0" role="radio" aria-checked="false">
+      <div class="candidate-avatar" style="background: #2563EB;">SR</div>
+      <div class="candidate-body">
+        <div class="candidate-name">Sandra Reyes</div>
+        <div class="candidate-party">Progressive Alliance</div>
+        <div class="candidate-platform">Expanding public transit, affordable housing reform, and green infrastructure investment across all districts.</div>
+      </div>
+      <div class="candidate-right">
+        <div class="radio-ring"></div>
+        <div class="check-icon"><svg fill="none" viewBox="0 0 24 24" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="result-bar-wrap">
+          <div class="result-pct" id="pct-0">—</div>
+          <div class="result-bar-track"><div class="result-bar-fill" id="bar-0" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="candidate-card" tabindex="0" data-id="1" role="radio" aria-checked="false">
+      <div class="candidate-avatar" style="background: #DC2626;">MT</div>
+      <div class="candidate-body">
+        <div class="candidate-name">Marcus T. Holloway</div>
+        <div class="candidate-party">Civic Renewal Party</div>
+        <div class="candidate-platform">Fiscal accountability, reducing city debt, strengthening small business grants and local enterprise zones.</div>
+      </div>
+      <div class="candidate-right">
+        <div class="radio-ring"></div>
+        <div class="check-icon"><svg fill="none" viewBox="0 0 24 24" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="result-bar-wrap">
+          <div class="result-pct" id="pct-1">—</div>
+          <div class="result-bar-track"><div class="result-bar-fill" id="bar-1" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="candidate-card" tabindex="0" data-id="2" role="radio" aria-checked="false">
+      <div class="candidate-avatar" style="background: #7C3AED;">DK</div>
+      <div class="candidate-body">
+        <div class="candidate-name">Diana Kowalski</div>
+        <div class="candidate-party">Independent</div>
+        <div class="candidate-platform">Community-led governance, open data transparency, and a citizen-first approach to city services.</div>
+      </div>
+      <div class="candidate-right">
+        <div class="radio-ring"></div>
+        <div class="check-icon"><svg fill="none" viewBox="0 0 24 24" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="result-bar-wrap">
+          <div class="result-pct" id="pct-2">—</div>
+          <div class="result-bar-track"><div class="result-bar-fill" id="bar-2" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="candidate-card" tabindex="0" data-id="3" role="radio" aria-checked="false">
+      <div class="candidate-avatar" style="background: #059669;">FN</div>
+      <div class="candidate-body">
+        <div class="candidate-name">Frank Nguyen</div>
+        <div class="candidate-party">Green Future</div>
+        <div class="candidate-platform">100% renewable energy by 2035, electric city fleet, and urban farming programs in every neighborhood.</div>
+      </div>
+      <div class="candidate-right">
+        <div class="radio-ring"></div>
+        <div class="check-icon"><svg fill="none" viewBox="0 0 24 24" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="result-bar-wrap">
+          <div class="result-pct" id="pct-3">—</div>
+          <div class="result-bar-track"><div class="result-bar-fill" id="bar-3" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- VOTE ACTION -->
+  <div class="vote-action" id="vote-action">
+    <div class="vote-hint">
+      <strong>Ready to submit?</strong>
+      Your vote is final once cast and cannot be changed.
+    </div>
+    <button class="btn-vote" id="btn-vote" disabled>
+      <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      Cast My Vote
+    </button>
+  </div>
+
+  <!-- SUCCESS BANNER -->
+  <div class="success-banner" id="success-banner" aria-live="polite">
+    <div class="success-icon">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="success-text">
+      <strong>Vote successfully recorded</strong>
+      <span>Your ballot has been encrypted and added to the audit trail.</span>
+    </div>
+    <div class="receipt-code" id="receipt-code"></div>
+  </div>
+
+  <!-- OTHER QUESTIONS -->
+  <div class="other-q-section">
+    <hr class="divider"/>
+    <div class="section-heading">
+      <h2>Ballot Measures</h2>
+      <span class="sub">2 questions</span>
+    </div>
+
+    <div class="poll-card">
+      <div class="poll-q">Measure A — Approve $45M bond for school infrastructure improvements?</div>
+      <div class="poll-options" id="poll-0">
+        <div class="poll-option" tabindex="0" data-poll="0" data-val="yes" role="radio">
+          <div class="poll-opt-radio"></div>Yes — I approve the bond measure
+        </div>
+        <div class="poll-option" tabindex="0" data-poll="0" data-val="no" role="radio">
+          <div class="poll-opt-radio"></div>No — I oppose the bond measure
+        </div>
+        <div class="poll-option" tabindex="0" data-poll="0" data-val="abstain" role="radio">
+          <div class="poll-opt-radio"></div>Abstain
+        </div>
+      </div>
+    </div>
+
+    <div class="poll-card">
+      <div class="poll-q">Measure B — Implement ranked-choice voting for future city elections?</div>
+      <div class="poll-options" id="poll-1">
+        <div class="poll-option" tabindex="0" data-poll="1" data-val="yes" role="radio">
+          <div class="poll-opt-radio"></div>Yes — Adopt ranked-choice voting
+        </div>
+        <div class="poll-option" tabindex="0" data-poll="1" data-val="no" role="radio">
+          <div class="poll-opt-radio"></div>No — Keep current voting system
+        </div>
+        <div class="poll-option" tabindex="0" data-poll="1" data-val="abstain" role="radio">
+          <div class="poll-opt-radio"></div>Abstain
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">© 2026 CivicVote · City of Maplewood Election Commission</div>
+  <nav class="footer-links">
+    <a href="#">Accessibility</a>
+    <a href="#">Privacy Policy</a>
+    <a href="#">Help & Support</a>
+    <a href="#">Audit Log</a>
+  </nav>
+</footer>
+
+<script>
+  // ── COUNTDOWN ──
+  function updateCountdown() {
+    const now = new Date();
+    const close = new Date(now);
+    close.setHours(20, 0, 0, 0);
+    let diff = Math.max(0, close - now);
+    const h = Math.floor(diff / 3600000); diff -= h * 3600000;
+    const m = Math.floor(diff / 60000);   diff -= m * 60000;
+    const s = Math.floor(diff / 1000);
+    document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+    document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+    document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // ── TURNOUT BAR ──
+  setTimeout(() => {
+    const pct = (12847 / 28400 * 100).toFixed(1);
+    document.getElementById('turnout-bar').style.width = pct + '%';
+  }, 300);
+
+  // ── CANDIDATE SELECTION ──
+  let selected = null;
+  let voted = false;
+  const cards = document.querySelectorAll('.candidate-card');
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => selectCandidate(card));
+    card.addEventListener('keydown', e => {
+      if ((e.key === 'Enter' || e.key === ' ') && !voted) {
+        e.preventDefault();
+        selectCandidate(card);
+      }
+    });
+  });
+
+  function selectCandidate(card) {
+    if (voted) return;
+    cards.forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-checked','false'); });
+    card.classList.add('selected');
+    card.setAttribute('aria-checked','true');
+    selected = parseInt(card.dataset.id);
+    document.getElementById('btn-vote').disabled = false;
+  }
+
+  // ── VOTE SUBMISSION ──
+  document.getElementById('btn-vote').addEventListener('click', submitVote);
+
+  function submitVote() {
+    if (selected === null || voted) return;
+    voted = true;
+    document.getElementById('btn-vote').disabled = true;
+    document.getElementById('btn-vote').textContent = 'Submitting…';
+
+    // simulate server delay
+    setTimeout(() => {
+      revealResults();
+    }, 900);
+  }
+
+  function revealResults() {
+    // simulated vote tallies (including the user's just-cast vote)
+    const totals = [3812, 2941, 2207, 3887];
+    totals[selected] += 1;
+    const sum = totals.reduce((a,b) => a+b, 0);
+
+    cards.forEach((card, i) => {
+      card.classList.remove('selected');
+      if (i === selected) {
+        card.classList.add('voted-winner');
+      } else {
+        card.classList.add('voted-other');
+      }
+      const pct = (totals[i] / sum * 100).toFixed(1);
+      document.getElementById('pct-' + i).textContent = pct + '%';
+      setTimeout(() => {
+        document.getElementById('bar-' + i).style.width = pct + '%';
+      }, 100 + i * 80);
+    });
+
+    document.getElementById('vote-action').style.display = 'none';
+    const banner = document.getElementById('success-banner');
+    banner.classList.add('visible');
+    document.getElementById('receipt-code').textContent = 'Receipt #' + Math.random().toString(36).substring(2,10).toUpperCase();
+
+    // bump turnout display
+    const newCount = 12848;
+    document.getElementById('turnout-num').textContent = newCount.toLocaleString();
+    document.getElementById('turnout-bar').style.width = (newCount / 28400 * 100).toFixed(2) + '%';
+  }
+
+  // ── POLL OPTIONS ──
+  document.querySelectorAll('.poll-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const pollId = opt.dataset.poll;
+      document.querySelectorAll(`.poll-option[data-poll="${pollId}"]`).forEach(o => {
+        o.classList.remove('selected');
+        o.setAttribute('aria-checked','false');
+      });
+      opt.classList.add('selected');
+      opt.setAttribute('aria-checked','true');
+    });
+    opt.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); opt.click(); }
+    });
+  });
+</script>
+</body>
+</html>
